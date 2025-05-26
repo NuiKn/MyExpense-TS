@@ -55,3 +55,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+      const { id } = await request.json();
+
+      if (id >= 1) {
+        await sql`DELETE FROM expenses WHERE id = ${id};`;
+        return NextResponse.json({ message: 'Expense deleted' });
+      } else {
+        return NextResponse.json({ message: "Expense not found" },{ status: 404 });
+      }
+    } catch (error) {
+      console.error('DELETE error:', error);
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+  }
