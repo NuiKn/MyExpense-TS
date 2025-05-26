@@ -4,7 +4,6 @@ import { Expense } from "@/app/types/Global.d.";
 
 const sql = neon(process.env.DATABASE_URL!);
 
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -56,4 +55,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
