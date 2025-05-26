@@ -7,11 +7,11 @@ import AddExpense from "./components/addExpense";
 import { Expense } from "./types/Global.d.";
 import Swal from "sweetalert2";
 import { useTheme } from "next-themes";
+import Summary from "./components/summary";
 
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [page, setPage] = useState(1);
   const { setTheme, resolvedTheme } = useTheme();
@@ -19,7 +19,7 @@ export default function Home() {
   const fetchExpenses = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/expense?search=${search}&sortKey=${sortKey}&sortOrder=${sortOrder}&page=${page}&limit=${10}`
+        `/api/expense?search=${search}&sortOrder=${sortOrder}&page=${page}&limit=${10}`
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -34,7 +34,7 @@ export default function Home() {
         Swal.fire("พลาดได้ไง", "ไม่น่าเชื่ออ เกิดข้อผิดพลาด", "error");
       }
     }
-  }, [search, sortKey, sortOrder, page]);
+  }, [search, sortOrder, page]);
 
   useEffect(() => {
     fetchExpenses();
@@ -63,6 +63,7 @@ export default function Home() {
                   : "แสบตาเกินไปป่าว?"}
               </button>
             </div>
+            <Summary></Summary>
             <AddExpense fetchExpenses={fetchExpenses}></AddExpense>
           </div>
           <div className="w-full overflow-x-auto">
@@ -71,7 +72,6 @@ export default function Home() {
                 มีไรบ้างวะรายงานดิ
               </label>
               <SearchExpense
-                setSortKey={setSortKey}
                 setSortOrder={setSortOrder}
                 setSearch={setSearch}
               ></SearchExpense>

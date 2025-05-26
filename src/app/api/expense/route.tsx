@@ -1,125 +1,59 @@
-import { Expense } from "@/app/types/Global.d.";
+import { neon } from '@neondatabase/serverless';
 import { NextResponse } from "next/server";
+import { Expense } from "@/app/types/Global.d.";
 
-const expenses: Expense = {
-    id: 999,
-    detail: "testData",
-    price: 999,
-    date: new Date("2025-05-03T14:30:00Z"),
-  };
-  
-const expenseData: Expense[] = [expenses];
+const sql = neon(process.env.DATABASE_URL!);
 
-let currentId = 1; 
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const sortOrderRaw = searchParams.get('sortOrder')?.toLowerCase();
+    const sortOrder = sortOrderRaw === 'asc' ? 'ASC' : 'DESC';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const offset = (page - 1) * limit;
 
-    const search = searchParams.get("search")?.trim() || "";
-    const sortKey = searchParams.get("sortKey") as keyof Expense;
-    const sortOrder = searchParams.get("sortOrder") || "asc";
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
-
-    let filtered : Expense[] = expenseData;
-
-    // Filtering based on search parameter
-    if (search) {
-      filtered = filtered.filter(
-        (item) =>
-          item.detail.includes(search) ||
-          item.date.toLocaleDateString().includes(search)
-      );
+    const searchPattern = `%${search}%`;
+    if (!['ASC', 'DESC'].includes(sortOrder)) {
+      return NextResponse.json({ error: 'Invalid sortOrder' }, { status: 400 });
     }
 
-    // Sorting based on sortKey
-    if (sortKey) {
-      filtered.sort((a, b) => {
-        let aVal, bVal;
+    const result = await sql`
+      SELECT * FROM expenses
+      WHERE detail ILIKE ${searchPattern}
+        OR TO_CHAR(date, 'DD-MM-YYYY') ILIKE ${searchPattern}
+      ORDER BY date ${sql.unsafe(sortOrder)}
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
-        if (sortKey === "price") {
-          aVal = a[sortKey];
-          bVal = b[sortKey];
-        } else if (sortKey === "date") {
-          aVal = a.date.getTime();
-          bVal = b.date.getTime();
-        } else {
-          aVal = a[sortKey];
-          bVal = b[sortKey];
-        }
-
-        if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-        if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    // Pagination
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    
-    const paginated = filtered.slice(start, end);
-
-    return NextResponse.json( paginated , { status: 200 });
+    return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { message: "Error processing request", error },
-      { status: 500 }
-    );
+    console.error('GET error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
- export async function POST(request: Request) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { detail, price } = body;
+    const { detail, price } = body as Partial<Expense>;
 
-    if (!detail || price === "0") {
-      return NextResponse.json({ message: "Invalid input" }, { status: 400 });
+    if (!detail || !price ) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const newExpense: Expense = {
-      id: currentId++,
-      detail,
-      price,
-      date: new Date(),
-    };
+    await sql`
+      INSERT INTO expenses (detail, price, date)
+      VALUES (${detail}, ${price}, ${new Date()});
+    `;
 
-    expenseData.push(newExpense);
-    currentId++;
+    return NextResponse.json({ message: 'Expense saved' }, { status: 200 });
 
-    return NextResponse.json( newExpense ,{ status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { message: "Failed to save expense", error },
-      { status: 500 }
-    );
+    console.error('Error saving expense:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-
-export async function DELETE(request: Request) {
-    try {
-      const { id } = await request.json();
-      const index = expenseData.findIndex((item) => item.id === id);
-  
-      if (index !== -1) {
-        expenseData.splice(index, 1);
-        return NextResponse.json(
-          { message: "Deleted successfully" },
-          { status: 200 }
-        );
-      } else {
-        return NextResponse.json(
-          { message: "Expense not found" },
-          { status: 404 }
-        );
-      }
-    } catch (error) {
-      return NextResponse.json(
-        { message: "Delete failed", error },
-        { status: 500 }
-      );
-    }
-  }

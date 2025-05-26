@@ -1,11 +1,9 @@
 interface SearchExpenseProps {
-  setSortKey: React.Dispatch<React.SetStateAction<string>>;
   setSortOrder: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const SearchExpense: React.FC<SearchExpenseProps> = ({
-  setSortKey,
   setSortOrder,
   setSearch,
 }) => {
@@ -13,15 +11,6 @@ const SearchExpense: React.FC<SearchExpenseProps> = ({
     <div>
       <div className="grid sm:flex sm:justify-between gap-2">
         <div className="flex gap-2">
-          <select
-            onChange={(e) => setSortKey(e.target.value)}
-            className="border px-2 py-1 rounded"
-          >
-            <option value="">เรียงตาม</option>
-            <option value="message">รายการ</option>
-            <option value="price">ราคา</option>
-            <option value="date">วันที่</option>
-          </select>
           <select
             onChange={(e) => setSortOrder(e.target.value)}
             className="border px-2 py-1 rounded"

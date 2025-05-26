@@ -7,5 +7,5 @@ export interface Expense {
 
 export interface ExpenseAdd {
     detail: string;
-    price: number;
+    price: number | "";
 }

@@ -80,7 +80,10 @@ const AddExpense: React.FC<AddExpenseProps> = ({ fetchExpenses }) => {
             className="border-2 rounded-md text-black"
             value={expenses.price}
             onChange={(e) =>
-              setExpenses({ ...expenses, price: +e.target.value })
+              setExpenses({ 
+                ...expenses, 
+                price: e.target.value === "" ? "" : +e.target.value
+              })
             }
             placeholder="ตัวเลขเท่านั้น!!!"
             type="number"
